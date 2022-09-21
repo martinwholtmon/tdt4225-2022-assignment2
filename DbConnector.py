@@ -1,3 +1,4 @@
+from ctypes import cast
 import mysql.connector as mysql
 from decouple import config
 
@@ -15,14 +16,18 @@ class DbConnector:
     PASSWORD = "test123" // The password you set for said user
     """
 
-    def __init__(self,
-                 HOST=config('HOST'),
-                 DATABASE=config('DATABASE'),
-                 USER=config('USER'),
-                 PASSWORD=config('PASSWORD')):
+    def __init__(
+        self,
+        HOST=config("HOST", cast=str),
+        DATABASE=config("DATABASE", cast=str),
+        USER=config("USER", cast=str),
+        PASSWORD=config("PASSWORD", cast=str),
+    ):
         # Connect to the database
         try:
-            self.db_connection = mysql.connect(host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=3306)
+            self.db_connection = mysql.connect(
+                host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=3306
+            )
         except Exception as e:
             print("ERROR: Failed to connect to db:", e)
 
