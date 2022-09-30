@@ -56,7 +56,7 @@ def create_tables() -> list:
     return tables
 
 
-def parse_and_insert_dataset(db: DbHandler):
+def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
     """Parse the dataset and insert it into the database
 
     Args:
@@ -68,16 +68,23 @@ def parse_and_insert_dataset(db: DbHandler):
     # If activity (has label) -> insert activity
     #   Get id from db -> batch insert TrackPoint for that activity
     # else -> batch insert trackpoints
+    path_to_dataset = os.path.join("dataset")
 
-    labeled_ids = read_labeled_users_file(r".\dataset\labeled_ids.txt")
+    labeled_ids = read_labeled_users_file(
+        os.path.join(path_to_dataset, "labeled_ids.txt")
+    )
     user = ""
     labels = []
     has_labels = False
-    for root, dirs, files in os.walk(r".\dataset\data"):
+    for root, dirs, files in os.walk(os.path.join(path_to_dataset, "Data")):
         # New user?
         if len(dirs) > 0 and dirs[0] == "Trajectory":
             user = os.path.normpath(root).split(os.path.sep)[-1]
             print(user)
+
+            # Partial insert, 0..stop_at_user-1
+            if user == stop_at_user:
+                return
 
             # Get labels
             if user in labeled_ids and files[0] == "labels.txt":
@@ -138,7 +145,7 @@ def main():
         db.drop_table(table_name="User")
 
         db.create_table(tables)
-        parse_and_insert_dataset(db)
+        parse_and_insert_dataset(db, "011")
 
         db.show_tables()
 
