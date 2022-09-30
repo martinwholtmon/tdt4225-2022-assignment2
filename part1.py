@@ -43,11 +43,11 @@ def create_tables() -> list:
             "CREATE TABLE IF NOT EXISTS `TrackPoint` ("
             "  `id` INT NOT NULL AUTO_INCREMENT,"
             "  `activity_id` INT,"
-            "  `lat` DOUBLE NOT NULL,"
-            "  `lon` DOUBLE NOT NULL,"
-            "  `altitude` INT NOT NULL,"
-            "  `date_days` DOUBLE NOT NULL,"
-            "  `date_time` DOUBLE NOT NULL,"
+            "  `lat` DOUBLE,"
+            "  `lon` DOUBLE,"
+            "  `altitude` INT,"
+            "  `date_days` DOUBLE,"
+            "  `date_time` DATETIME,"
             "  PRIMARY KEY (`id`),"
             "  FOREIGN KEY (`activity_id`) REFERENCES Activity(id)"
             ")"
@@ -100,7 +100,14 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
             if has_labels:
                 insert_activity(user, labels, db)
 
-    # Insert Trajectory
+        # Insert Trajectory
+        if os.path.normpath(root).split(os.path.sep)[-1] == "Trajectory":
+            values = []
+            for file in files:
+                insert_trajectory(root, file, has_labels, labels, values)
+            db.insert_trackpoints(
+                values,
+            )
 
 
 def insert_activity(user, labels, db: DbHandler):
@@ -115,8 +122,8 @@ def insert_activity(user, labels, db: DbHandler):
     for key, val in labels.items():
         data = val["data"]
 
-        start_date_time = str(data[0]).replace("/", "-") + " " + str(data[1])
-        end_date_time = str(data[2]).replace("/", "-") + " " + str(data[3])
+        start_date_time = get_datetime_format(data[0], data[1])
+        end_date_time = get_datetime_format(data[2], data[3])
 
         insertion_id = db.insert_data(
             "Activity",
@@ -131,6 +138,32 @@ def insert_activity(user, labels, db: DbHandler):
 
         # update dict with id
         labels[key]["id"] = insertion_id
+
+
+def insert_trajectory(root, file, has_labels, labels, values):
+    path = os.path.join(root, file)
+    data_points = read_data_file(path)[6:]
+    if len(data_points) > 2500:
+        return
+
+    # Prepare data for insertion
+    for data in data_points:
+        lat = data[0]
+        lon = data[1]
+        altitude = int(data[3])
+        date_days = data[4]
+        date_time = get_datetime_format(data[5], data[6])
+        # if has_labels:
+        #     activity_id = "000"
+        # else:
+        #     activity_id = "000"
+
+        # Append to values
+        values.append([lat, lon, altitude, date_days, date_time])
+
+
+def get_datetime_format(date, time) -> str:
+    return str(date).replace("/", "-") + " " + str(time)
 
 
 def main():
