@@ -58,8 +58,8 @@ class DbHandler:
         return self.cursor.lastrowid
 
     def insert_trackpoints(self, values):
-        print("com")
         query = "INSERT INTO TrackPoint (lat, lon, altitude, date_days, date_time) VALUES (%s, %s, %s, %s, %s)"
+        print(len(values))
 
         # Insert
         self.cursor.executemany(query, values)

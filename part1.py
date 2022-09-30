@@ -143,23 +143,21 @@ def insert_activity(user, labels, db: DbHandler):
 def insert_trajectory(root, file, has_labels, labels, values):
     path = os.path.join(root, file)
     data_points = read_data_file(path)[6:]
-    if len(data_points) > 2500:
-        return
+    if len(data_points) < 2500:
+        # Prepare data for insertion
+        for data in data_points:
+            lat = data[0]
+            lon = data[1]
+            altitude = int(data[3])
+            date_days = data[4]
+            date_time = get_datetime_format(data[5], data[6])
+            # if has_labels:
+            #     activity_id = "000"
+            # else:
+            #     activity_id = "000"
 
-    # Prepare data for insertion
-    for data in data_points:
-        lat = data[0]
-        lon = data[1]
-        altitude = int(data[3])
-        date_days = data[4]
-        date_time = get_datetime_format(data[5], data[6])
-        # if has_labels:
-        #     activity_id = "000"
-        # else:
-        #     activity_id = "000"
-
-        # Append to values
-        values.append([lat, lon, altitude, date_days, date_time])
+            # Append to values
+            values.append([lat, lon, altitude, date_days, date_time])
 
 
 def get_datetime_format(date, time) -> str:
