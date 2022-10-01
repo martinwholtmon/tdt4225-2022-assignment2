@@ -94,7 +94,7 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
                 has_labels = False
 
             # insert user into db
-            _ = db.insert_data("User", ["id", "has_labels"], [user, has_labels])
+            _ = db.insert_user([user, has_labels])
 
             # insert activity, store ids in the dict
             if has_labels:
@@ -125,15 +125,8 @@ def insert_activity(user, labels, db: DbHandler):
         start_date_time = get_datetime_format(data[0], data[1])
         end_date_time = get_datetime_format(data[2], data[3])
 
-        insertion_id = db.insert_data(
-            "Activity",
-            [
-                "user_id",
-                "transportation_mode",
-                "start_date_time",
-                "end_date_time",
-            ],
-            [user, str(data[4]), start_date_time, end_date_time],
+        insertion_id = db.insert_activity(
+            [user, str(data[4]), start_date_time, end_date_time]  # Transportation mode
         )
 
         # update dict with id
@@ -151,13 +144,14 @@ def insert_trajectory(root, file, has_labels, labels, values):
             altitude = int(data[3])
             date_days = data[4]
             date_time = get_datetime_format(data[5], data[6])
+            activity_id = None
             # if has_labels:
             #     activity_id = "000"
             # else:
             #     activity_id = "000"
 
             # Append to values
-            values.append([lat, lon, altitude, date_days, date_time])
+            values.append([activity_id, lat, lon, altitude, date_days, date_time])
 
 
 def get_datetime_format(date, time) -> str:
@@ -176,7 +170,7 @@ def main():
         db.drop_table(table_name="User")
 
         db.create_table(tables)
-        parse_and_insert_dataset(db, "011")
+        parse_and_insert_dataset(db, "001")
 
         db.show_tables()
 
