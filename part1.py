@@ -74,7 +74,7 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
         os.path.join(path_to_dataset, "labeled_ids.txt")
     )
     user = ""
-    labels = []
+    labels = {}
     has_labels = False
     for root, dirs, files in os.walk(os.path.join(path_to_dataset, "Data")):
         # New user?
@@ -96,62 +96,57 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
             # insert user into db
             _ = db.insert_user([user, has_labels])
 
-            # insert activity, store ids in the dict
-            if has_labels:
-                insert_activity(user, labels, db)
-
-        # Insert Trajectory
+        # Insert activities with Trajectory data
         if os.path.normpath(root).split(os.path.sep)[-1] == "Trajectory":
-            values = []
             for file in files:
-                insert_trajectory(root, file, has_labels, labels, values)
-            db.insert_trackpoints(
-                values,
-            )
+                insert_trajectory(user, root, file, has_labels, labels, db)
 
 
-def insert_activity(user, labels, db: DbHandler):
-    """Will insert an activity into the db for a user.
-    Will update the dict with the id of the activity to use later when inserting TrackPoint
+def insert_activity(user, file, data_points, has_labels, labels, db: DbHandler) -> int:
+    # Prepare activity
+    start_date_time = get_datetime_format(data_points[0][5], data_points[0][6])
+    end_date_time = get_datetime_format(data_points[-1][5], data_points[-1][6])
 
-    Args:
-        user (str): id of the user
-        labels (dict): All the activities/labels
-        program (DbHandler): the database controller
-    """
-    for key, val in labels.items():
-        data = val["data"]
-
-        start_date_time = get_datetime_format(data[0], data[1])
-        end_date_time = get_datetime_format(data[2], data[3])
-
-        insertion_id = db.insert_activity(
-            [user, str(data[4]), start_date_time, end_date_time]  # Transportation mode
-        )
-
-        # update dict with id
-        labels[key]["id"] = insertion_id
+    # Match Transportation mode
+    transportation_mode = None
+    if has_labels:
+        # Get activity from dict
+        activity = labels.get(file)
+        if activity is not None:
+            # Match end time
+            if get_datetime_format(activity[2], activity[3]) == end_date_time:
+                transportation_mode = activity[4]
+    # Insert
+    return db.insert_activity(
+        [user, transportation_mode, start_date_time, end_date_time]
+    )
 
 
-def insert_trajectory(root, file, has_labels, labels, values):
+def insert_trajectory(user, root, file, has_labels, labels: dict, db: DbHandler):
     path = os.path.join(root, file)
     data_points = read_data_file(path)[6:]
-    if len(data_points) < 2500:
-        # Prepare data for insertion
-        for data in data_points:
-            lat = data[0]
-            lon = data[1]
-            altitude = int(data[3])
-            date_days = data[4]
-            date_time = get_datetime_format(data[5], data[6])
-            activity_id = None
-            # if has_labels:
-            #     activity_id = "000"
-            # else:
-            #     activity_id = "000"
 
-            # Append to values
-            values.append([activity_id, lat, lon, altitude, date_days, date_time])
+    # Check file size
+    if len(data_points) > 2500:
+        return
+
+    # Insert Activity
+    activity_id = insert_activity(user, file, data_points, has_labels, labels, db)
+
+    # Prepare data for insertion
+    values = []
+    for data in data_points:
+        lat = data[0]
+        lon = data[1]
+        altitude = int(data[3])
+        date_days = data[4]
+        date_time = get_datetime_format(data[5], data[6])
+
+        # Append dp to activity
+        values.append([activity_id, lat, lon, altitude, date_days, date_time])
+
+    # insert trajectory
+    db.insert_trackpoints(values)
 
 
 def get_datetime_format(date, time) -> str:
@@ -165,12 +160,12 @@ def main():
         db = DbHandler()
 
         # Drop tables
-        db.drop_table(table_name="TrackPoint")
-        db.drop_table(table_name="Activity")
-        db.drop_table(table_name="User")
+        db.drop_table("TrackPoint")
+        db.drop_table("Activity")
+        db.drop_table("User")
 
         db.create_table(tables)
-        parse_and_insert_dataset(db, "001")
+        parse_and_insert_dataset(db, "011")
 
         db.show_tables()
 

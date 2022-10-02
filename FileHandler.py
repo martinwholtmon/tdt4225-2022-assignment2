@@ -33,8 +33,7 @@ def read_user_labels_file(path) -> dict:
     labels = {}
     for d in data:
         key = str(d[0]).replace("/", "") + str(d[1]).replace(":", "")
-        labels[key] = {}
-        labels[key]["data"] = d
+        labels[key] = d
     return labels
 
 
