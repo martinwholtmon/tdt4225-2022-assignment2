@@ -1,3 +1,4 @@
+from logging import exception
 import os
 from DbHandler import DbHandler
 from FileHandler import read_data_file, read_labeled_users_file, read_user_labels_file
@@ -98,11 +99,15 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
 
         # Insert activities with Trajectory data
         if os.path.normpath(root).split(os.path.sep)[-1] == "Trajectory":
+            values = []
             for file in files:
-                insert_trajectory(user, root, file, has_labels, labels, db)
+                insert_trajectory(user, root, file, has_labels, labels, db, values)
+            db.insert_trackpoints(values)
 
 
-def insert_activity(user, file, data_points, has_labels, labels, db: DbHandler) -> int:
+def insert_activity(
+    user, file, data_points, has_labels, labels, db: DbHandler
+) -> "int | None":
     # Prepare activity
     start_date_time = get_datetime_format(data_points[0][5], data_points[0][6])
     end_date_time = get_datetime_format(data_points[-1][5], data_points[-1][6])
@@ -111,7 +116,7 @@ def insert_activity(user, file, data_points, has_labels, labels, db: DbHandler) 
     transportation_mode = None
     if has_labels:
         # Get activity from dict
-        activity = labels.get(file)
+        activity = labels.get(os.path.splitext(file)[0])
         if activity is not None:
             # Match end time
             if get_datetime_format(activity[2], activity[3]) == end_date_time:
@@ -122,7 +127,9 @@ def insert_activity(user, file, data_points, has_labels, labels, db: DbHandler) 
     )
 
 
-def insert_trajectory(user, root, file, has_labels, labels: dict, db: DbHandler):
+def insert_trajectory(
+    user, root, file, has_labels, labels: dict, db: DbHandler, values
+):
     path = os.path.join(root, file)
     data_points = read_data_file(path)[6:]
 
@@ -132,9 +139,10 @@ def insert_trajectory(user, root, file, has_labels, labels: dict, db: DbHandler)
 
     # Insert Activity
     activity_id = insert_activity(user, file, data_points, has_labels, labels, db)
+    if activity_id is None:
+        raise ValueError(f"Activity {path} was not inserted!")
 
     # Prepare data for insertion
-    values = []
     for data in data_points:
         lat = data[0]
         lon = data[1]
@@ -144,9 +152,6 @@ def insert_trajectory(user, root, file, has_labels, labels: dict, db: DbHandler)
 
         # Append dp to activity
         values.append([activity_id, lat, lon, altitude, date_days, date_time])
-
-    # insert trajectory
-    db.insert_trackpoints(values)
 
 
 def get_datetime_format(date, time) -> str:
@@ -165,7 +170,7 @@ def main():
         db.drop_table("User")
 
         db.create_table(tables)
-        parse_and_insert_dataset(db, "011")
+        parse_and_insert_dataset(db)
 
         db.show_tables()
 
