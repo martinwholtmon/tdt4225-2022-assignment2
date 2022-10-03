@@ -19,6 +19,7 @@ class DbConnector:
     def __init__(
         self,
         HOST=config("HOST", cast=str),
+        PORT=config("PORT"),
         DATABASE=config("DATABASE", cast=str),
         USER=config("USER", cast=str),
         PASSWORD=config("PASSWORD", cast=str),
@@ -26,7 +27,7 @@ class DbConnector:
         # Connect to the database
         try:
             self.db_connection = mysql.connect(
-                host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=3306
+                host=HOST, database=DATABASE, user=USER, password=PASSWORD, port=PORT
             )
         except Exception as e:
             print("ERROR: Failed to connect to db:", e)
