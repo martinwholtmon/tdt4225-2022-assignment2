@@ -1,4 +1,3 @@
-from logging import exception
 import os
 from DbHandler import DbHandler
 from FileHandler import read_data_file, read_labeled_users_file, read_user_labels_file
@@ -11,6 +10,8 @@ def create_tables() -> list:
         list: a list of all the tables to insert
     """
     tables = []
+
+    # TODO: Cascade rules!!
 
     # User
     tables.append(
@@ -81,7 +82,6 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
         # New user?
         if len(dirs) > 0 and dirs[0] == "Trajectory":
             user = os.path.normpath(root).split(os.path.sep)[-1]
-            print(user)
 
             # Partial insert, 0..stop_at_user-1
             if user == stop_at_user:
@@ -121,6 +121,7 @@ def insert_activity(
             # Match end time
             if get_datetime_format(activity[2], activity[3]) == end_date_time:
                 transportation_mode = activity[4]
+
     # Insert
     return db.insert_activity(
         [user, transportation_mode, start_date_time, end_date_time]
@@ -131,24 +132,24 @@ def insert_trajectory(
     user, root, file, has_labels, labels: dict, db: DbHandler, values
 ):
     path = os.path.join(root, file)
-    data_points = read_data_file(path)[6:]
+    data = read_data_file(path)[6:]
 
     # Check file size
-    if len(data_points) > 2500:
+    if len(data) > 2500:
         return
 
     # Insert Activity
-    activity_id = insert_activity(user, file, data_points, has_labels, labels, db)
+    activity_id = insert_activity(user, file, data, has_labels, labels, db)
     if activity_id is None:
         raise ValueError(f"Activity {path} was not inserted!")
 
     # Prepare data for insertion
-    for data in data_points:
-        lat = data[0]
-        lon = data[1]
-        altitude = int(data[3])
-        date_days = data[4]
-        date_time = get_datetime_format(data[5], data[6])
+    for trackpoint in data:
+        lat = trackpoint[0]
+        lon = trackpoint[1]
+        altitude = int(float(trackpoint[3]))
+        date_days = trackpoint[4]
+        date_time = get_datetime_format(trackpoint[5], trackpoint[6])
 
         # Append dp to activity
         values.append([activity_id, lat, lon, altitude, date_days, date_time])
@@ -165,12 +166,12 @@ def main():
         db = DbHandler()
 
         # Drop tables
-        db.drop_table("TrackPoint")
-        db.drop_table("Activity")
-        db.drop_table("User")
+        # db.drop_table("TrackPoint")
+        # db.drop_table("Activity")
+        # db.drop_table("User")
 
-        db.create_table(tables)
-        parse_and_insert_dataset(db)
+        # db.create_table(tables)
+        # parse_and_insert_dataset(db)
 
         db.show_tables()
 
