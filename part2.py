@@ -10,64 +10,64 @@ def task_1(db):
 
 
 def task_2(db):
-    query = (
-        "SELECT AVG(nr_activities) "
-        "FROM ("
-        "  SELECT user_id, count(*) as nr_activities"
-        "  FROM test_db.Activity"
-        "  GROUP BY user_id"
-        ") as activities;"
-    )
+    query = """
+    SELECT AVG(nr_activities) 
+        FROM (
+          SELECT user_id, count(*) as nr_activities
+          FROM test_db.Activity
+          GROUP BY user_id
+        ) as activities;
+    """
     ret = db.execute_query(query)
     print(f"Average number of activities per user is {ret[0][0]}")
 
 
 def task_3(db):
-    query = (
-        "SELECT "
-        "  user_id, count(*) as nr_activities "
-        "FROM test_db.Activity "
-        "GROUP BY user_id "
-        "ORDER BY nr_activities DESC "
-        "LIMIT 20;"
-    )
+    query = """
+        SELECT 
+          user_id, count(*) as nr_activities 
+        FROM test_db.Activity 
+        GROUP BY user_id 
+        ORDER BY nr_activities DESC 
+        LIMIT 20;
+    """
     ret = db.execute_query(query)
     print(f"Users with the most activity: {ret}")
 
 
 def task_4(db):
-    query = (
-        "SELECT user_id "
-        "FROM test_db.Activity "
-        "WHERE transportation_mode = 'taxi' "
-        "GROUP BY user_id;"
-    )
+    query = """
+        SELECT user_id 
+        FROM test_db.Activity 
+        WHERE transportation_mode = 'taxi' 
+        GROUP BY user_id;
+    """
     ret = db.execute_query(query)
     print(f"Users that have taken a taxi: {ret}")
 
 
 def task_5(db):
-    query = (
-        "SELECT "
-        "    transportation_mode, count(*) as nr_activities "
-        "FROM test_db.Activity "
-        "WHERE transportation_mode IS NOT NULL "
-        "GROUP BY transportation_mode;"
-    )
+    query = """
+        SELECT 
+            transportation_mode, count(*) as nr_activities 
+        FROM test_db.Activity 
+        WHERE transportation_mode IS NOT NULL 
+        GROUP BY transportation_mode;
+    """
     ret = db.execute_query(query)
     print(f"Transportation mode with count: {ret}")
 
 
 def task_6(db):
     # Get year with most activities
-    query = (
-        "SELECT "
-        "    YEAR(start_date_time) as year, count(*) as nr_activities "
-        "FROM test_db.Activity "
-        "GROUP BY year "
-        "ORDER BY nr_activities DESC "
-        "LIMIT 1;"
-    )
+    query = """
+        SELECT 
+            YEAR(start_date_time) as year, count(*) as nr_activities 
+        FROM test_db.Activity 
+        GROUP BY year 
+        ORDER BY nr_activities DESC 
+        LIMIT 1;
+    """
     ret = db.execute_query(query)[0]
     year = ret[0]
     print(f"Year with most activities: {ret}")
@@ -95,15 +95,15 @@ def task_6(db):
 
 def task_7(db):
     # Get total distance for user 112 in 2008 with activity = walk
-    query = (
-        "SELECT activity_id, lat, lon "
-        "FROM test_db.TrackPoint "
-        "WHERE activity_id IN ( "
-        "    SELECT id "
-        "    FROM test_db.Activity "
-        "    WHERE user_id = '112' AND transportation_mode = 'walk' "
-        ");"
-    )
+    query = """
+        SELECT activity_id, lat, lon 
+        FROM test_db.TrackPoint 
+        WHERE activity_id IN ( 
+            SELECT id 
+            FROM test_db.Activity 
+        WHERE user_id = '112' AND transportation_mode = 'walk' 
+        );
+    """
     ret = db.execute_query(query)
 
     # Calulates the distance between the points
@@ -120,12 +120,12 @@ def task_7(db):
 
 
 def task_8(db):
-    query = (
-        "SELECT "
-        "    Activity.user_id, TrackPoint.activity_id, TrackPoint.altitude "
-        "FROM test_db.TrackPoint "
-        "INNER JOIN Activity ON TrackPoint.activity_id=Activity.id;"
-    )
+    query = """
+        SELECT 
+            Activity.user_id, TrackPoint.activity_id, TrackPoint.altitude 
+        FROM test_db.TrackPoint 
+        INNER JOIN Activity ON TrackPoint.activity_id=Activity.id;
+    """
     ret = db.execute_query(query)
 
     altitude = {}
@@ -152,7 +152,7 @@ def task_8(db):
     print(f"The 20 users who gained the most altitude meters is: {top_users}")
 
 
-def task_9(db):
+# def task_9(db):
 
 
 def main():
@@ -169,7 +169,7 @@ def main():
         task_6(db)
         task_7(db)
         task_8(db)
-        task_9(db)
+        # task_9(db)
 
     except Exception as e:
         print("ERROR: Failed to use database:", e)
