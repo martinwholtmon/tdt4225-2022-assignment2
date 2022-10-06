@@ -1,12 +1,12 @@
-from email import header
 import itertools
 import pandas as pd
 from haversine import haversine, Unit
-from DbHandler import DbHandler
 from tabulate import tabulate
+from DbHandler import DbHandler
 
 
 def task_1(db):
+    """Find out the total amount of rows in table: User, Activity and Activity"""
     tables = {}
     tables["User"] = db.get_nr_rows("User")
     tables["Activity"] = db.get_nr_rows("Activity")
@@ -15,11 +15,12 @@ def task_1(db):
     # Print
     print("\nTask 1")
     print(
-        f"The 20 users who gained the most altitude meters is: \n{tabulate_dict(tables, ['Table', 'Count'])}"
+        f"Total amount of rows in tables: \n{tabulate_dict(tables, ['Table', 'Rows'])}"
     )
 
 
 def task_2(db):
+    """Find the average number of activities per user"""
     query = """
     SELECT AVG(nr_activities) 
         FROM (
@@ -36,6 +37,7 @@ def task_2(db):
 
 
 def task_3(db):
+    """Find the top 20 users with the highest number of activities."""
     query = """
         SELECT 
           user_id, count(*) as nr_activities 
@@ -52,6 +54,7 @@ def task_3(db):
 
 
 def task_4(db):
+    """Find all users who have taken a taxi."""
     query = """
         SELECT user_id 
         FROM test_db.Activity 
@@ -66,6 +69,9 @@ def task_4(db):
 
 
 def task_5(db):
+    """Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels.
+    Do not count the rows where the mode is null.
+    """
     query = """
         SELECT 
             transportation_mode, count(*) as nr_activities 
@@ -83,6 +89,10 @@ def task_5(db):
 
 
 def task_6(db):
+    """
+    a) Find the year with the most activities.
+    b) Is this also the year with most recorded hours?
+    """
     # Get year with most activities
     query = """
         SELECT 
@@ -102,8 +112,8 @@ def task_6(db):
     for year, start, finish in ret:
         recorded_hours[year] = (
             recorded_hours[year] + (finish - start)
-            if recorded_hours.get(year) is not None
-            else (finish - start)
+            if recorded_hours.get(year) is not None  # Update if exist in dict
+            else (finish - start)  # First time? Insert value
         )
 
     # Convert to hours
@@ -121,7 +131,7 @@ def task_6(db):
 
 
 def task_7(db):
-    # Get total distance for user 112 in 2008 with activity = walk
+    """Find the total distance (in km) walked in 2008, by user with id=112."""
     query = """
         SELECT activity_id, lat, lon 
         FROM test_db.TrackPoint 
@@ -136,13 +146,16 @@ def task_7(db):
     # Calulates the distance between the points
     # Assumes that the points are in order for each activity
     distance = 0.0
-    activity_id = ret[0][0]
+    aid = ret[0][0]
     for x in range(1, len(ret)):
-        if activity_id == ret[x][0]:
+        # Same activity?
+        if aid == ret[x][0]:
+            # Calculate the distance between the trackpoints (coordinates)
+            # And add it to the total distance
             distance += haversine(ret[x - 1][1:], ret[x][1:], unit=Unit.KILOMETERS)
         else:
-            # New activity? Update id
-            activity_id = ret[x][0]
+            # New activity, Update aid
+            aid = ret[x][0]
 
     # Print
     print("\nTask 7")
@@ -150,6 +163,7 @@ def task_7(db):
 
 
 def task_8(db):
+    """Find the top 20 users who have gained the most altitude meters"""
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.altitude 
@@ -162,13 +176,15 @@ def task_8(db):
     current_aid = -1
     old_alt = -1
     for uid, aid, alt in ret:
-        # Same activity and new alt is higher
-        if aid == current_aid and old_alt < alt:
-            diff = alt - old_alt
-            # add altitude
-            altitude[uid] = (
-                altitude[uid] + diff if altitude.get(uid) is not None else diff
-            )
+        # Same activity
+        if aid == current_aid:
+            # Not invalid + new alt is higher
+            if old_alt < alt and alt != -777 and old_alt != -777:
+                diff = alt - old_alt
+                # add altitude
+                altitude[uid] = (
+                    altitude[uid] + diff if altitude.get(uid) is not None else diff
+                )
         else:
             # New activity
             current_aid = aid
@@ -182,11 +198,15 @@ def task_8(db):
     # Print
     print("\nTask 8")
     print(
-        f"The 20 users who gained the most altitude meters is: \n{tabulate_dict(top_users, ['User', 'Gained Altitude'])}"
+        f"The 20 users who gained the most altitude meters is: \n{tabulate_dict(top_users, ['User', 'Gained Altitude (m)'])}"
     )
 
 
 def task_9(db):
+    """Find all users who have invalid activities, and the number of invalid activities per user
+    An invalid activity is defined as an activity with consecutive
+    trackpoints where the timestamps deviate with at least 5 minutes.
+    """
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.date_time 
@@ -199,7 +219,9 @@ def task_9(db):
     curr_aid = -1
     old_dt = None
     for uid, aid, dt in ret:
+        # If same activity
         if aid == curr_aid:
+            # Calulate the time between the trackpoints in minutes
             diff = divmod((dt - old_dt).total_seconds(), 60)[0]
             if diff >= 5:
                 users[uid] = users[uid] + 1 if users.get(uid) is not None else 1
@@ -215,6 +237,9 @@ def task_9(db):
 
 
 def task_10(db):
+    """Find the users who have tracked an activity in the Forbidden City of Beijing.
+    the Forbidden City: lat 39.916, lon 116.397
+    """
     query = """
         SELECT Activity.user_id
         FROM (
@@ -236,6 +261,7 @@ def task_10(db):
 
 
 def task_11(db):
+    """Find all users who have registered transportation_mode and their most used transportation_mode."""
     query = """
         SELECT 
             user_id, transportation_mode, COUNT(*) as count
@@ -245,6 +271,11 @@ def task_11(db):
         ORDER BY user_id ASC, count DESC
     """
     ret = db.execute_query(query)
+
+    # Query will return user with the most used transportation mode.
+    # If there are more than one transportationmode for a user
+    # (a user used two types of transportation modes the same mount of times),
+    # select the first one.
     users = {}
     for uid, mode, _ in ret:
         if users.get(uid) is None:
@@ -257,7 +288,7 @@ def task_11(db):
     )
 
 
-def tabulate_dict(dict, headers) -> str:
+def tabulate_dict(data, headers) -> str:
     """Will tabulate a dict that has the format of key:value
 
     Args:
@@ -265,9 +296,9 @@ def tabulate_dict(dict, headers) -> str:
         headers (list): list of the header names
 
     Returns:
-        str: _description_
+        str: tabulated data
     """
-    df = pd.DataFrame(dict, index=[0]).transpose()
+    df = pd.DataFrame(data, index=[0]).transpose()
     return tabulate(df, headers=headers, floatfmt=".0f")
 
 
@@ -275,9 +306,8 @@ def main():
     db = None
     try:
         db = DbHandler()
-        db.show_tables()
 
-        # Tasks:
+        # Execute the tasks:
         task_1(db)
         task_2(db)
         task_3(db)
