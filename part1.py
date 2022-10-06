@@ -1,3 +1,4 @@
+from datetime import datetime
 import os
 from DbHandler import DbHandler
 from FileHandler import read_data_file, read_labeled_users_file, read_user_labels_file
@@ -155,8 +156,17 @@ def insert_trajectory(
         values.append([activity_id, lat, lon, altitude, date_days, date_time])
 
 
-def get_datetime_format(date, time) -> str:
-    return str(date).replace("/", "-") + " " + str(time)
+def get_datetime_format(date, time) -> datetime:
+    """Convert the date and time to datetime format
+
+    Args:
+        date (str): the date
+        time (str): time
+
+    Returns:
+        datetime: the date and time
+    """
+    return datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S")
 
 
 def main():
@@ -166,12 +176,12 @@ def main():
         db = DbHandler()
 
         # Drop tables
-        # db.drop_table("TrackPoint")
-        # db.drop_table("Activity")
-        # db.drop_table("User")
+        db.drop_table("TrackPoint")
+        db.drop_table("Activity")
+        db.drop_table("User")
 
-        # db.create_table(tables)
-        # parse_and_insert_dataset(db)
+        db.create_table(tables)
+        parse_and_insert_dataset(db, "002")
 
         db.show_tables()
 
