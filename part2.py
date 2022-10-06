@@ -1,18 +1,25 @@
+from email import header
 import itertools
+import pandas as pd
 from haversine import haversine, Unit
-from tomlkit import datetime
 from DbHandler import DbHandler
+from tabulate import tabulate
 
 
 def task_1(db):
+    tables = {}
+    tables["User"] = db.get_nr_rows("User")
+    tables["Activity"] = db.get_nr_rows("Activity")
+    tables["TrackPoint"] = db.get_nr_rows("TrackPoint")
+
+    # Print
     print("\nTask 1")
-    print(f"User: {db.get_nr_rows('User')}")
-    print(f"Activity: {db.get_nr_rows('Activity')}")
-    print(f"TrackPoint: {db.get_nr_rows('TrackPoint')}")
+    print(
+        f"The 20 users who gained the most altitude meters is: \n{tabulate_dict(tables, ['Table', 'Count'])}"
+    )
 
 
 def task_2(db):
-    print("\nTask 2")
     query = """
     SELECT AVG(nr_activities) 
         FROM (
@@ -22,11 +29,13 @@ def task_2(db):
         ) as activities;
     """
     ret = db.execute_query(query)
+
+    # Print
+    print("\nTask 2")
     print(f"Average number of activities per user is {ret[0][0]}")
 
 
 def task_3(db):
-    print("\nTask 3")
     query = """
         SELECT 
           user_id, count(*) as nr_activities 
@@ -36,11 +45,13 @@ def task_3(db):
         LIMIT 20;
     """
     ret = db.execute_query(query)
-    print(f"Users with the most activity: {ret}")
+
+    # Print
+    print("\nTask 3")
+    print(f"Users with the most activity: \n{tabulate(ret, headers=['User', 'Count'])}")
 
 
 def task_4(db):
-    print("\nTask 4")
     query = """
         SELECT user_id 
         FROM test_db.Activity 
@@ -48,11 +59,13 @@ def task_4(db):
         GROUP BY user_id;
     """
     ret = db.execute_query(query)
-    print(f"Users that have taken a taxi: {ret}")
+
+    # Print
+    print("\nTask 4")
+    print(f"Users that have taken a taxi: \n{tabulate(ret ,headers=['User'])}")
 
 
 def task_5(db):
-    print("\nTask 5")
     query = """
         SELECT 
             transportation_mode, count(*) as nr_activities 
@@ -61,11 +74,15 @@ def task_5(db):
         GROUP BY transportation_mode;
     """
     ret = db.execute_query(query)
-    print(f"Transportation mode with count: {ret}")
+
+    # Print
+    print("\nTask 5")
+    print(
+        f"Transportation mode with count: \n{tabulate(ret, headers=['Transportation Mode', 'Count'])}"
+    )
 
 
 def task_6(db):
-    print("\nTask 6")
     # Get year with most activities
     query = """
         SELECT 
@@ -76,8 +93,7 @@ def task_6(db):
         LIMIT 1;
     """
     ret = db.execute_query(query)[0]
-    year = ret[0]
-    print(f"Year with most activities: {ret}")
+    most_activities_year = ret[0]
 
     # Get year with most recorded hours
     query = "SELECT YEAR(start_date_time), start_date_time, end_date_time FROM test_db.Activity;"
@@ -96,12 +112,15 @@ def task_6(db):
         recorded_hours[key] = divmod(val.seconds, 3600)[0]
 
     # Most hours
-    most_recorded_hours = max(recorded_hours, key=recorded_hours.get)
-    print(f"Year most most recorded hours: {most_recorded_hours}")
+    most_recorded_hours_year = max(recorded_hours, key=recorded_hours.get)
+
+    # Print
+    print("\nTask 6")
+    print(f"Year with most activities: {most_activities_year}")
+    print(f"Year most most recorded hours: {most_recorded_hours_year}")
 
 
 def task_7(db):
-    print("\nTask 7")
     # Get total distance for user 112 in 2008 with activity = walk
     query = """
         SELECT activity_id, lat, lon 
@@ -124,11 +143,13 @@ def task_7(db):
         else:
             # New activity? Update id
             activity_id = ret[x][0]
-    print(f"User 112 walked {distance} km in 2008")
+
+    # Print
+    print("\nTask 7")
+    print(f"User 112 walked {round(distance, 3)} km in 2008")
 
 
 def task_8(db):
-    print("\nTask 8")
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.altitude 
@@ -157,11 +178,15 @@ def task_8(db):
     # source: https://stackoverflow.com/a/2258273
     altitude = dict(sorted(altitude.items(), key=lambda x: x[1], reverse=True))
     top_users = dict(itertools.islice(altitude.items(), 20))
-    print(f"The 20 users who gained the most altitude meters is: {top_users}")
+
+    # Print
+    print("\nTask 8")
+    print(
+        f"The 20 users who gained the most altitude meters is: \n{tabulate_dict(top_users, ['User', 'Gained Altitude'])}"
+    )
 
 
 def task_9(db):
-    print("\nTask 9")
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.date_time 
@@ -181,11 +206,15 @@ def task_9(db):
         else:
             curr_aid = aid
         old_dt = dt
-    print(f"Users with invalid activities: {users}")
+
+    # Print
+    print("\nTask 9")
+    print(
+        f"Users with invalid activities: \n{tabulate_dict(users, ['User', 'Invalid Activities'])}"
+    )
 
 
 def task_10(db):
-    print("\nTask 10")
     query = """
         SELECT Activity.user_id
         FROM (
@@ -198,11 +227,15 @@ def task_10(db):
         GROUP BY user_id;
     """
     ret = db.execute_query(query)
-    print(f"Users that have visited 'the Forbidden City': {ret}")
+
+    # Print
+    print("\nTask 10")
+    print(
+        f"Users that have visited 'the Forbidden City': \n{tabulate(ret, headers=['User'])}"
+    )
 
 
 def task_11(db):
-    print("\nTask 11")
     query = """
         SELECT 
             user_id, transportation_mode, COUNT(*) as count
@@ -216,7 +249,26 @@ def task_11(db):
     for uid, mode, _ in ret:
         if users.get(uid) is None:
             users[uid] = mode
-    print(f"Users with most used transportation mode: {users}")
+
+    # Print
+    print("\nTask 11")
+    print(
+        f"Users with most used transportation mode: \n{tabulate_dict(users, ['User', 'Transportation Mode'])}"
+    )
+
+
+def tabulate_dict(dict, headers) -> str:
+    """Will tabulate a dict that has the format of key:value
+
+    Args:
+        dict (dict): a key:value pair store
+        headers (list): list of the header names
+
+    Returns:
+        str: _description_
+    """
+    df = pd.DataFrame(dict, index=[0]).transpose()
+    return tabulate(df, headers=headers, floatfmt=".0f")
 
 
 def main():
@@ -225,6 +277,7 @@ def main():
         db = DbHandler()
         db.show_tables()
 
+        # Tasks:
         task_1(db)
         task_2(db)
         task_3(db)

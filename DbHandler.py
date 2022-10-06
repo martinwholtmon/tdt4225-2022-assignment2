@@ -107,4 +107,4 @@ class DbHandler:
 
         # execute
         self.cursor.execute(query % table)
-        return self.cursor.fetchall()[0][0]
+        return int(self.cursor.fetchall()[0][0])
