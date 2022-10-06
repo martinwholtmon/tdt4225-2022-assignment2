@@ -46,7 +46,7 @@ def read_data_file(path) -> "list[list]":
     Returns:
         list[list]: a list containing every line provided as a list
     """
-    file = open(path, "r", encoding="utf-8")
-    list_of_lists = [(line.strip()).replace(",", " ").split() for line in file]
-    file.close()
+    n_file = open(path, "r", encoding="utf-8")
+    list_of_lists = [(line.strip()).replace(",", " ").split() for line in n_file]
+    n_file.close()
     return list_of_lists

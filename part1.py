@@ -60,18 +60,13 @@ def create_tables() -> list:
 
 
 def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
-    """Parse the dataset and insert it into the database
+    """Will parse the dataset and insert the users,
+    the activities and all the trackpoints for each activity.
 
     Args:
         program (DbHandler): the database
     """
-    # program.insert_data("test", ["v1", "v2"], [["1", "2"], ["3", "4"]])
-
-    # Insert user
-    # If activity (has label) -> insert activity
-    #   Get id from db -> batch insert TrackPoint for that activity
-    # else -> batch insert trackpoints
-    path_to_dataset = os.path.join("dataset")
+    path_to_dataset = os.path.join("./dataset")
 
     labeled_ids = read_labeled_users_file(
         os.path.join(path_to_dataset, "labeled_ids.txt")
@@ -81,6 +76,8 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
     has_labels = False
     for root, dirs, files in os.walk(os.path.join(path_to_dataset, "Data")):
         # New user?
+        # Directory has a "Trajectory" folder,
+        # meaning we are in a new users directory
         if len(dirs) > 0 and dirs[0] == "Trajectory":
             user = os.path.normpath(root).split(os.path.sep)[-1]
 
@@ -99,6 +96,7 @@ def parse_and_insert_dataset(db: DbHandler, stop_at_user=""):
             _ = db.insert_user([user, has_labels])
 
         # Insert activities with Trajectory data
+        # In "Trajectory" directory
         if os.path.normpath(root).split(os.path.sep)[-1] == "Trajectory":
             values = []
             for file in files:
@@ -176,12 +174,12 @@ def main():
         db = DbHandler()
 
         # Drop tables
-        db.drop_table("TrackPoint")
-        db.drop_table("Activity")
-        db.drop_table("User")
+        # db.drop_table("TrackPoint")
+        # db.drop_table("Activity")
+        # db.drop_table("User")
 
-        db.create_table(tables)
-        parse_and_insert_dataset(db, "002")
+        # db.create_table(tables)
+        # parse_and_insert_dataset(db)
 
         db.show_tables()
 
