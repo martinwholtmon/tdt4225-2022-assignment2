@@ -146,7 +146,7 @@ def insert_trajectory(
     for trackpoint in data:
         lat = trackpoint[0]
         lon = trackpoint[1]
-        altitude = int(float(trackpoint[3]))
+        altitude = int(round(float(trackpoint[3])))
         date_days = trackpoint[4]
         date_time = get_datetime_format(trackpoint[5], trackpoint[6])
 
@@ -164,7 +164,9 @@ def get_datetime_format(date, time) -> datetime:
     Returns:
         datetime: the date and time
     """
-    return datetime.strptime(date + " " + time, "%Y-%m-%d %H:%M:%S")
+    return datetime.strptime(
+        str(date).replace("/", "-") + " " + str(time), "%Y-%m-%d %H:%M:%S"
+    )
 
 
 def main():
@@ -178,8 +180,8 @@ def main():
         # db.drop_table("Activity")
         # db.drop_table("User")
 
-        # db.create_table(tables)
-        # parse_and_insert_dataset(db)
+        db.create_table(tables)
+        parse_and_insert_dataset(db)
 
         db.show_tables()
 
