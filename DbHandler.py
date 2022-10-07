@@ -76,14 +76,14 @@ class DbHandler:
         print(f"  inserting {len(values)} trackpoints")
 
         # Insert
+        # Because executemany is slow, this will prepare a query with n trackpoints
         prepared_values = ""
         for i, value in enumerate(values):
             prepared_values += (
                 "(" + ", ".join(map(lambda x: "'" + str(x) + "'", value)) + ")"
             )
 
-            if i % partition == 0 and i != 0:
-                # Insert
+            if (i % partition == 0 and i != 0) or i == len(values) - 1:
                 prepared_values += ";"
                 self.cursor.execute(query + prepared_values)
                 prepared_values = ""
