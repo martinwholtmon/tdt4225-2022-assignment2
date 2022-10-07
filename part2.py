@@ -5,7 +5,7 @@ from tabulate import tabulate
 from DbHandler import DbHandler
 
 
-def task_1(db):
+def task_1(db: DbHandler):
     """Find out the total amount of rows in table: User, Activity and Activity"""
     tables = {}
     tables["User"] = db.get_nr_rows("User")
@@ -19,29 +19,21 @@ def task_1(db):
     )
 
 
-def task_2(db):
-    """Find the average number of activities per user"""
-    query = """
-    SELECT AVG(nr_activities) 
-        FROM (
-          SELECT user_id, count(*) as nr_activities
-          FROM test_db.Activity
-          GROUP BY user_id
-        ) as activities;
-    """
-    ret = db.execute_query(query)
+def task_2(db: DbHandler):
+    """Find the average number of activities per user (including users with 0 activities)"""
+    average = db.get_nr_rows("Activity") / db.get_nr_rows("User")
 
     # Print
     print("\nTask 2")
-    print(f"Average number of activities per user is {ret[0][0]}")
+    print(f"Average number of activities per user is {average}")
 
 
-def task_3(db):
+def task_3(db: DbHandler):
     """Find the top 20 users with the highest number of activities."""
     query = """
         SELECT 
           user_id, count(*) as nr_activities 
-        FROM test_db.Activity 
+        FROM Activity 
         GROUP BY user_id 
         ORDER BY nr_activities DESC 
         LIMIT 20;
@@ -53,11 +45,11 @@ def task_3(db):
     print(f"Users with the most activity: \n{tabulate(ret, headers=['User', 'Count'])}")
 
 
-def task_4(db):
+def task_4(db: DbHandler):
     """Find all users who have taken a taxi."""
     query = """
         SELECT user_id 
-        FROM test_db.Activity 
+        FROM Activity 
         WHERE transportation_mode = 'taxi' 
         GROUP BY user_id;
     """
@@ -68,14 +60,14 @@ def task_4(db):
     print(f"Users that have taken a taxi: \n{tabulate(ret ,headers=['User'])}")
 
 
-def task_5(db):
+def task_5(db: DbHandler):
     """Find all types of transportation modes and count how many activities that are tagged with these transportation mode labels.
     Do not count the rows where the mode is null.
     """
     query = """
         SELECT 
             transportation_mode, count(*) as nr_activities 
-        FROM test_db.Activity 
+        FROM Activity 
         WHERE transportation_mode IS NOT NULL 
         GROUP BY transportation_mode;
     """
@@ -88,7 +80,7 @@ def task_5(db):
     )
 
 
-def task_6(db):
+def task_6(db: DbHandler):
     """
     a) Find the year with the most activities.
     b) Is this also the year with most recorded hours?
@@ -97,7 +89,7 @@ def task_6(db):
     query = """
         SELECT 
             YEAR(start_date_time) as year, count(*) as nr_activities 
-        FROM test_db.Activity 
+        FROM Activity 
         GROUP BY year 
         ORDER BY nr_activities DESC 
         LIMIT 1;
@@ -106,7 +98,9 @@ def task_6(db):
     most_activities_year = ret[0]
 
     # Get year with most recorded hours
-    query = "SELECT YEAR(start_date_time), start_date_time, end_date_time FROM test_db.Activity;"
+    query = (
+        "SELECT YEAR(start_date_time), start_date_time, end_date_time FROM Activity;"
+    )
     ret = db.execute_query(query)
     recorded_hours = {}
     for year, start, finish in ret:
@@ -130,14 +124,14 @@ def task_6(db):
     print(f"Year most most recorded hours: {most_recorded_hours_year}")
 
 
-def task_7(db):
+def task_7(db: DbHandler):
     """Find the total distance (in km) walked in 2008, by user with id=112."""
     query = """
         SELECT activity_id, lat, lon 
-        FROM test_db.TrackPoint 
+        FROM TrackPoint 
         WHERE activity_id IN ( 
             SELECT id 
-            FROM test_db.Activity 
+            FROM Activity 
         WHERE user_id = '112' AND transportation_mode = 'walk' 
         );
     """
@@ -162,12 +156,12 @@ def task_7(db):
     print(f"User 112 walked {round(distance, 3)} km in 2008")
 
 
-def task_8(db):
+def task_8(db: DbHandler):
     """Find the top 20 users who have gained the most altitude meters"""
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.altitude 
-        FROM test_db.TrackPoint 
+        FROM TrackPoint 
         INNER JOIN Activity ON TrackPoint.activity_id=Activity.id;
     """
     ret = db.execute_query(query)
@@ -202,7 +196,7 @@ def task_8(db):
     )
 
 
-def task_9(db):
+def task_9(db: DbHandler):
     """Find all users who have invalid activities, and the number of invalid activities per user
     An invalid activity is defined as an activity with consecutive
     trackpoints where the timestamps deviate with at least 5 minutes.
@@ -210,7 +204,7 @@ def task_9(db):
     query = """
         SELECT 
             Activity.user_id, TrackPoint.activity_id, TrackPoint.date_time 
-        FROM test_db.TrackPoint 
+        FROM TrackPoint 
         INNER JOIN Activity ON TrackPoint.activity_id=Activity.id;
     """
     ret = db.execute_query(query)
@@ -236,7 +230,7 @@ def task_9(db):
     )
 
 
-def task_10(db):
+def task_10(db: DbHandler):
     """Find the users who have tracked an activity in the Forbidden City of Beijing.
     the Forbidden City: lat 39.916, lon 116.397
     """
@@ -245,7 +239,7 @@ def task_10(db):
         FROM (
             SELECT 
                 activity_id, ROUND(lat, 3) AS lat, ROUND(lon, 3) AS lon
-            FROM test_db.TrackPoint
+            FROM TrackPoint
             HAVING lat = '39.916' AND lon = '116.397'
         ) as activities
         INNER JOIN Activity ON activities.activity_id=Activity.id
@@ -260,7 +254,7 @@ def task_10(db):
     )
 
 
-def task_11(db):
+def task_11(db: DbHandler):
     """Find all users who have registered transportation_mode and their most used transportation_mode."""
     query = """
         SELECT 
