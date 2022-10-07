@@ -12,49 +12,51 @@ def create_tables() -> list:
     """
     tables = []
 
-    # TODO: Cascade rules!!
-
     # User
     tables.append(
-        (
-            "CREATE TABLE IF NOT EXISTS `User` ("
-            "  `id` varchar(3) NOT NULL,"
-            "  `has_labels` boolean NOT NULL,"
-            "  PRIMARY KEY (`id`)"
-            ")"
-        )
+        """
+            CREATE TABLE IF NOT EXISTS `User` (
+                `id` varchar(3) NOT NULL,
+                `has_labels` boolean NOT NULL,
+                PRIMARY KEY (`id`)
+            )
+        """
     )
 
     # Activity
     tables.append(
-        (
-            "CREATE TABLE IF NOT EXISTS `Activity` ("
-            "  `id` INT NOT NULL AUTO_INCREMENT,"
-            "  `user_id` varchar(3) NOT NULL,"
-            "  `transportation_mode` varchar(40),"
-            "  `start_date_time` DATETIME,"
-            "  `end_date_time` DATETIME,"
-            "  PRIMARY KEY (`id`),"
-            "  FOREIGN KEY (`user_id`) REFERENCES User(id)"
-            ")"
-        )
+        """
+            CREATE TABLE IF NOT EXISTS `Activity` (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `user_id` varchar(3) NOT NULL,
+                `transportation_mode` varchar(40),
+                `start_date_time` DATETIME,
+                `end_date_time` DATETIME,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (`user_id`)
+                    REFERENCES User(id)
+                    ON DELETE CASCADE
+            )
+        """
     )
 
     # TrackPoint
     tables.append(
-        (
-            "CREATE TABLE IF NOT EXISTS `TrackPoint` ("
-            "  `id` INT NOT NULL AUTO_INCREMENT,"
-            "  `activity_id` INT,"
-            "  `lat` DOUBLE,"
-            "  `lon` DOUBLE,"
-            "  `altitude` INT,"
-            "  `date_days` DOUBLE,"
-            "  `date_time` DATETIME,"
-            "  PRIMARY KEY (`id`),"
-            "  FOREIGN KEY (`activity_id`) REFERENCES Activity(id)"
-            ")"
-        )
+        """
+            CREATE TABLE IF NOT EXISTS `TrackPoint` (
+                `id` INT NOT NULL AUTO_INCREMENT,
+                `activity_id` INT,
+                `lat` DOUBLE,
+                `lon` DOUBLE,
+                `altitude` INT,
+                `date_days` DOUBLE,
+                `date_time` DATETIME,
+                PRIMARY KEY (`id`),
+                FOREIGN KEY (`activity_id`)
+                    REFERENCES Activity(id)
+                    ON DELETE CASCADE
+            )
+        """
     )
     return tables
 
